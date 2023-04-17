@@ -6,6 +6,8 @@ if ~exist('splsolver_imp','file')
     addpath( genpath([pwd '\splsolver']) );
 end
 
+r=0.6;
+barrier_param=0.00001;
 
 if ~exist('hession_proj', 'var'), hession_proj = 'SymmDirichlet'; end
 if ~exist('energy_param', 'var'), energy_param = 1; end
@@ -13,8 +15,9 @@ if ~exist('energy_param', 'var'), energy_param = 1; end
 
 if isreal(xref), xref = fR2C(xref); end
 if isreal(y), y = fR2C(y); end
-if isreal(P2PDst), P2PDst = fR2C(P2PDst); end
-
+if ~isempty(P2PDst)
+    if isreal(P2PDst), P2PDst = fR2C(P2PDst); end
+end
 nf = size(t, 1);
 nv = size(y, 1);
 
@@ -51,7 +54,8 @@ D = sparse(repmat(1:nf,3,1)', t, D2);
 % fIsoEnergyFromFzGz = @(fz, gz) meshIsometricEnergy(D2, fz, gz, Areas, energy_type, energy_param);
 fIsoEnergyFromFzGz = @(fz, gz) meshIsometricEnergyC(fz, gz, D2t, Areas, mexoption);
 
-fDeformEnergy = @(z) fIsoEnergyFromFzGz(conj(D*conj(z)), D*z) + p2p_weight*norm(z(P2PVtxIds)-P2PDst)^2;
+%fDeformEnergy = @(z) fIsoEnergyFromFzGz(conj(D*conj(z)), D*z) + p2p_weight*norm(z(P2PVtxIds)-P2PDst)^2;
+fDeformEnergy = @(z) fIsoEnergyFromFzGz(conj(D*conj(z)), D*z) + p2p_weight*norm(z(P2PVtxIds)-P2PDst)^2+barrier_param*sum(1./((r^2-real(z).^2))+1./((r^2-imag(z).^2)));
 
 %% initialization, get sparse matrix pattern
 [xmesh, ymesh] = meshgrid(1:6, 1:6);
@@ -59,15 +63,17 @@ t2 = [t t+nv]';
 Mi = t2(xmesh(:), :);
 Mj = t2(ymesh(:), :);
 
-% H = sparse(Mi, Mj, 1, nv*2, nv*2);  % only pattern is needed
+ H = sparse(Mi, Mj, 1, nv*2, nv*2);  % only pattern is needed
 %L = laplacian(y, t, 'uniform');
-L=cotLaplace(fC2R(y),t);
-H = [L L; L L];
+%L=cotLaplace(fC2R(y),t);
+%H = [L L; L L];
 
 % nonzero indices of the matrix
 Hnonzeros0 = zeros(nnz(H),1);
+Hnonzeros2=zeros(nnz(H),1);
 P2PxId = uint64( [P2PVtxIds P2PVtxIds+nv] );
 idxDiagH = ij2nzIdxs(H, P2PxId, P2PxId);
+idxDiagH2 = ij2nzIdxs(H,uint64(1:nv*2),uint64(1:nv*2));
 Hnonzeros0(idxDiagH) = p2p_weight*2;
 nzidx = ij2nzIdxs(H, uint64(Mi), uint64(Mj));
 
@@ -95,6 +101,13 @@ for it=1:nIter
     G0(P2PxId) = [real(dp2p); imag(dp2p)]*p2p_weight*2;
     G = myaccumarray(g2GIdx, g, G0);
     Hnonzeros = myaccumarray( nzidx, hs, Hnonzeros0 );
+    
+    Rz=real(z); Iz=imag(z);
+    G1=barrier_param*[2*Rz./(r^2-Rz.*Rz).^2;2*Iz./(r^2-Iz.*Iz).^2];
+    G=G+G1;
+    Hnonzeros2(idxDiagH2)=barrier_param*[2*(r^2+3*Rz.*Rz)./(r^2-Rz.*Rz).^3;2*(r^2+3*Iz.*Iz)./(r^2-Iz.*Iz).^3];
+    Hnonzeros=Hnonzeros+Hnonzeros2;
+    en=en+barrier_param*sum(1./((r^2-real(z).^2))+1./((r^2-imag(z).^2)));
     
     %% Newton
     dz = solver.refactor_solve(Hnonzeros, -G);

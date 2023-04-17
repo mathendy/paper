@@ -11,15 +11,19 @@ arg1=(0:2:360)'/180*pi;
 holeCenter1=1i/2;
 holeCenter2=(0.8-0.5i)/2;
 holeCenter3=(-0.8-0.5i)/2;
+
+%holeCenter4=0;
 outerBoundary=[cos(arg1),sin(arg1)];
-r=0.5;
+r=0.3;
 arg2=(0:6:360)'/180*pi;
 holes1=[r*cos(arg2),r*sin(arg2)+1]/2;
 holes2=[r*cos(arg2)+0.8,r*sin(arg2)-0.5]/2;
 holes3=[r*cos(arg2)-0.8,r*sin(arg2)-0.5]/2;
+%holes4=[r*cos(arg2),r*sin(arg2)]/2;
 %plot(outerBoundary(:,1),outerBoundary(:,2),holes1(:,1),holes1(:,2),holes2(:,1),holes2(:,2),holes3(:,1),holes3(:,2));
 
-[X, T] = cdt([{outerBoundary},{holes1,holes2,holes3}],[], 1000, false);
+[X, T] = cdt([{outerBoundary},{holes1,holes2,holes3}],[], 10000, false);
+%[X, T] = cdt([{outerBoundary},{holes1,holes2,holes3,holes4}],[], 10000, false);
 
 figure(1);
 CX=fR2C(X);
@@ -31,11 +35,19 @@ BdIdx=freeBoundary(TR);
 
 
 %% integration
+%3 holes
 a1=-(holeCenter1+holeCenter2+holeCenter3)/3;
 a2=(holeCenter1*holeCenter2+holeCenter1*holeCenter3+holeCenter2*holeCenter3)/2;
 a3=-holeCenter1*holeCenter2*holeCenter3;
-
 fDeformInt=@(x) 1/4*x.^4+a1*x.^3+a2*x.^2+a3*x;
+
+% %4 holes
+% a1=-(holeCenter1+holeCenter2+holeCenter3+holeCenter4)/4;
+% a2=(holeCenter1*holeCenter2+holeCenter1*holeCenter3+holeCenter2*holeCenter3+holeCenter1*holeCenter4+holeCenter4*holeCenter3+holeCenter2*holeCenter4)/3;
+% a3=-(holeCenter1*holeCenter2*holeCenter3+holeCenter1*holeCenter2*holeCenter4+holeCenter1*holeCenter4*holeCenter3+holeCenter4*holeCenter2*holeCenter3)/2;
+% a4=holeCenter1*holeCenter2*holeCenter3*holeCenter4;
+% fDeformInt=@(x) 1/5*x.^5+a1*x.^4+a2*x.^3+a3*x.^2+a4*x;
+
 CtestDeformMeshXInt=fDeformInt(CX);
 testDeformMeshXInt=fC2R(CtestDeformMeshXInt);
 
@@ -54,23 +66,25 @@ triplot(TRDeformInt);
 
 
 %% optimal
-P2PVtxIds=[1];
-% [XP2PDeform, statsAll] = meshAQP(CX, T, P2PVtxIds, CtestDeformMeshXInt(P2PVtxIds), CtestDeformMeshXInt, 1000);
-[XP2PDeform, statsAll]=meshNewton(CX,T,P2PVtxIds, CtestDeformMeshXInt(P2PVtxIds),CtestDeformMeshXInt, 10000,100,1);
+P2PVtxIds=[];
+%[XP2PDeform, statsAll] = meshAQP(CX, T, P2PVtxIds, CtestDeformMeshXInt(P2PVtxIds), CtestDeformMeshXInt, 1000);
+[XP2PDeform, statsAll]=meshNewton(CX,T,P2PVtxIds, CtestDeformMeshXInt(P2PVtxIds),CtestDeformMeshXInt, 1000,100,1);
+[XP2PDeform, statsAll] = meshAQP(CX, T, P2PVtxIds, XP2PDeform(P2PVtxIds), XP2PDeform, 1000);
 load dat flipInd2
 
 XP2PDeform=fC2R(XP2PDeform);
 %XP2PDeform=[XP2PDeform,X(:,2)];
 figure(3);
 triplot(T,XP2PDeform(:,1),XP2PDeform(:,2));
-% hold on;
-% plot(XP2PDeform(BdIdx(:,1),1),XP2PDeform(BdIdx(:,1),2),'r','Marker','o','MarkerSize',2);
+hold on;
+plot(XP2PDeform(BdIdx(:,1),1),XP2PDeform(BdIdx(:,1),2),'r','Marker','o','MarkerSize',2);
 
 
 %trimesh(T,XP2PDeform(:,1),XP2PDeform(:,2),X(:,2));
 
 %% flip
-k2=find(flipInd2);
+[flipInd1,k]=testFlip(X,T,XP2PDeform);
+k2=find(flipInd1);
 if ~isempty(k2)
     figure(1);
     triplot(T,X(:,1),X(:,2));
