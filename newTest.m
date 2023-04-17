@@ -49,6 +49,7 @@ fDeformInt=@(x) 1/4*x.^4+a1*x.^3+a2*x.^2+a3*x;
 % fDeformInt=@(x) 1/5*x.^5+a1*x.^4+a2*x.^3+a3*x.^2+a4*x;
 
 CtestDeformMeshXInt=fDeformInt(CX);
+CtestDeformMeshXInt=0.5*CtestDeformMeshXInt;
 testDeformMeshXInt=fC2R(CtestDeformMeshXInt);
 
 figure(2);
@@ -69,7 +70,7 @@ triplot(TRDeformInt);
 P2PVtxIds=[];
 %[XP2PDeform, statsAll] = meshAQP(CX, T, P2PVtxIds, CtestDeformMeshXInt(P2PVtxIds), CtestDeformMeshXInt, 1000);
 [XP2PDeform, statsAll]=meshNewton(CX,T,P2PVtxIds, CtestDeformMeshXInt(P2PVtxIds),CtestDeformMeshXInt, 1000,100,1);
-[XP2PDeform, statsAll] = meshAQP(CX, T, P2PVtxIds, XP2PDeform(P2PVtxIds), XP2PDeform, 1000);
+%[XP2PDeform, statsAll] = meshAQP(CX, T, P2PVtxIds, XP2PDeform(P2PVtxIds), XP2PDeform, 1000);
 load dat flipInd2
 
 XP2PDeform=fC2R(XP2PDeform);

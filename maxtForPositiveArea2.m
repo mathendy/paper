@@ -1,4 +1,4 @@
-function t = maxtForPositiveArea( fz, gz, dfz, dgz )
+function t = maxtForPositiveArea2( fz, gz, dfz, dgz )
 
 a = abs(dfz).^2 - abs(dgz).^2;
 b = 2*real( conj(fz).*dfz - conj(gz).*dgz );

@@ -6,8 +6,8 @@ if ~exist('splsolver_imp','file')
     addpath( genpath([pwd '\splsolver']) );
 end
 
-r=0.6;
-barrier_param=0.00001;
+r=0.3;
+barrier_param=0.0001;
 
 if ~exist('hession_proj', 'var'), hession_proj = 'SymmDirichlet'; end
 if ~exist('energy_param', 'var'), energy_param = 1; end
