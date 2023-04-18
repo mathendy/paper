@@ -9,18 +9,20 @@ imgfilepath  = fullfile(datadir, 'image.png');
 %% test for 3 holes ring mesh
 arg1=(0:2:360)'/180*pi;
 holeCenter1=1i/2;
-holeCenter2=(0.8-0.5i)/2;
-holeCenter3=(-0.8-0.5i)/2;
+holeCenter2=(1.2-0.8i)/2;
+holeCenter3=(-1.2-0.8i)/2;
 
-%holeCenter4=0;
+
 outerBoundary=[cos(arg1),sin(arg1)];
 r=0.3;
 arg2=(0:6:360)'/180*pi;
 holes1=[r*cos(arg2),r*sin(arg2)+1]/2;
-holes2=[r*cos(arg2)+0.8,r*sin(arg2)-0.5]/2;
-holes3=[r*cos(arg2)-0.8,r*sin(arg2)-0.5]/2;
-%holes4=[r*cos(arg2),r*sin(arg2)]/2;
-%plot(outerBoundary(:,1),outerBoundary(:,2),holes1(:,1),holes1(:,2),holes2(:,1),holes2(:,2),holes3(:,1),holes3(:,2));
+holes2=[r*cos(arg2)+1.2,r*sin(arg2)-0.8]/2;
+holes3=[r*cos(arg2)-1.2,r*sin(arg2)-0.8]/2;
+
+holeCenter4=0;
+holes4=[r*cos(arg2),r*sin(arg2)]/2;
+% plot(outerBoundary(:,1),outerBoundary(:,2),holes1(:,1),holes1(:,2),holes2(:,1),holes2(:,2),holes3(:,1),holes3(:,2));
 
 [X, T] = cdt([{outerBoundary},{holes1,holes2,holes3}],[], 10000, false);
 %[X, T] = cdt([{outerBoundary},{holes1,holes2,holes3,holes4}],[], 10000, false);
@@ -49,7 +51,6 @@ fDeformInt=@(x) 1/4*x.^4+a1*x.^3+a2*x.^2+a3*x;
 % fDeformInt=@(x) 1/5*x.^5+a1*x.^4+a2*x.^3+a3*x.^2+a4*x;
 
 CtestDeformMeshXInt=fDeformInt(CX);
-CtestDeformMeshXInt=0.5*CtestDeformMeshXInt;
 testDeformMeshXInt=fC2R(CtestDeformMeshXInt);
 
 figure(2);
@@ -68,6 +69,7 @@ triplot(TRDeformInt);
 
 %% optimal
 P2PVtxIds=[];
+CtestDeformMeshXInt=0.5*CtestDeformMeshXInt;
 %[XP2PDeform, statsAll] = meshAQP(CX, T, P2PVtxIds, CtestDeformMeshXInt(P2PVtxIds), CtestDeformMeshXInt, 1000);
 [XP2PDeform, statsAll]=meshNewton(CX,T,P2PVtxIds, CtestDeformMeshXInt(P2PVtxIds),CtestDeformMeshXInt, 1000,100,1);
 %[XP2PDeform, statsAll] = meshAQP(CX, T, P2PVtxIds, XP2PDeform(P2PVtxIds), XP2PDeform, 1000);
@@ -82,6 +84,20 @@ plot(XP2PDeform(BdIdx(:,1),1),XP2PDeform(BdIdx(:,1),2),'r','Marker','o','MarkerS
 
 
 %trimesh(T,XP2PDeform(:,1),XP2PDeform(:,2),X(:,2));
+
+%% comparison
+direct_scalCX=0.25*CX;
+[XP2PDeform2, statsAll]=meshNewton(CX,T,P2PVtxIds, direct_scalCX(P2PVtxIds),direct_scalCX, 1000,100,1);
+
+XP2PDeform2=fC2R(XP2PDeform2);
+
+figure(4);
+triplot(T,XP2PDeform2(:,1),XP2PDeform2(:,2));
+hold on;
+plot(XP2PDeform2(BdIdx(:,1),1),XP2PDeform2(BdIdx(:,1),2),'r','Marker','o','MarkerSize',2);
+
+
+
 
 %% flip
 [flipInd1,k]=testFlip(X,T,XP2PDeform);

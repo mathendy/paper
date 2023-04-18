@@ -125,14 +125,19 @@ classdef OptimProblemIsoDist < OptimProblem
         
         function [varargout] = evaluateFunctional(obj, x, doVal, doGrad, doHess)
             % evaluate
+            r=0.3;
+            barrier_param=0.000001;
+            Vxy=reshape(obj.V,[],1);
             obj.Tx = obj.T*x;
             if doVal||doGrad
                 % call mex helps
                 [obj.f_val, obj.Tx_grad, obj.flips] = computeFunctionalIsoDistMex(obj.Tx, obj.areas, obj.dim);
+                obj.f_val=obj.f_val+barrier_param*sum(1./(r^2-Vxy.^2));
                 if obj.flips
                     warning('negative det');
                     obj.f_val = inf;
                 end
+                
             end
             % return
             n_arg = 0;
@@ -143,6 +148,7 @@ classdef OptimProblemIsoDist < OptimProblem
             if doGrad
                 n_arg = n_arg + 1;
                 varargout{n_arg} = (obj.Tx_grad'*obj.T)';
+                varargout{n_arg} = (obj.Tx_grad'*obj.T)'+barrier_param*2*Vxy./(r^2-Vxy.^2).^2;
             end
             if doHess
                 n_arg = n_arg + 1;

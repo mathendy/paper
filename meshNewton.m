@@ -7,7 +7,7 @@ if ~exist('splsolver_imp','file')
 end
 
 r=0.3;
-barrier_param=0.0001;
+barrier_param=0.0002;
 
 if ~exist('hession_proj', 'var'), hession_proj = 'SymmDirichlet'; end
 if ~exist('energy_param', 'var'), energy_param = 1; end
@@ -95,7 +95,7 @@ for it=1:nIter
     assert( all( abs(fz)>abs(gz) ) );
 
     [en, g, hs] = fIsoEnergyFromFzGz(fz, gz);
-
+    enIso=en;
     en = en + p2p_weight*norm(z(P2PVtxIds)-P2PDst)^2;
     dp2p = z(P2PVtxIds) - P2PDst;
     G0(P2PxId) = [real(dp2p); imag(dp2p)]*p2p_weight*2;
@@ -132,7 +132,7 @@ for it=1:nIter
     end
     en = e_new;
     
-    fprintf('\nit: %3d, en: %.3e, runtime: %.3fs, ls: %.2e', it, en, toc(tt), ls_t*normdz);
+    fprintf('\nit: %3d, en: %.3e, runtime: %.3fs, ls: %.2e', it, enIso, toc(tt), ls_t*normdz);
     assert( all( signedAreas(dz*ls_t + z, t)>0 ) );
     
     %% update
