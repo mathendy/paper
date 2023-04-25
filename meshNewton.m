@@ -7,9 +7,10 @@ if ~exist('splsolver_imp','file')
 end
 
 r=0.3;
-barrier_param=0.0002;
+barrier_param=0.0004;
 
-if ~exist('hession_proj', 'var'), hession_proj = 'SymmDirichlet'; end
+if ~exist('energy_type', 'var'), hession_proj = 'SymmDirichlet'; end
+if ~exist('hession_proj', 'var'), hession_proj = 'KP'; end
 if ~exist('energy_param', 'var'), energy_param = 1; end
 
 
