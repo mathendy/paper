@@ -8,20 +8,20 @@ imgfilepath  = fullfile(datadir, 'image.png');
 
 %% test for 3 holes ring mesh
 arg1=(0:2:360)'/180*pi;
-holeCenter1=3i/4;
-holeCenter2=(1.2-0.8i)/2;
-holeCenter3=(-1.2-0.8i)/2;
+holeCenter1=3i/5;
+holeCenter2=(1-0.6i)/2;
+holeCenter3=(-1-0.6i)/2;
 
 
 outerBoundary=[cos(arg1),sin(arg1)];
 r=0.3;
 arg2=(0:6:360)'/180*pi;
-holes1=[r*cos(arg2),r*sin(arg2)+1.5]/2;
-holes2=[r*cos(arg2)+1.2,r*sin(arg2)-0.8]/2;
-holes3=[r*cos(arg2)-1.2,r*sin(arg2)-0.8]/2;
+holes1=[r*cos(arg2),r*sin(arg2)]/2+fC2R(holeCenter1);
+holes2=[r*cos(arg2),r*sin(arg2)]/2+fC2R(holeCenter2);
+holes3=[r*cos(arg2),r*sin(arg2)]/2+fC2R(holeCenter3);
 
 holeCenter4=0;
-holes4=[r*cos(arg2),r*sin(arg2)]/2;
+holes4=[r*cos(arg2),r*sin(arg2)]/2+fC2R(holeCenter4);
 % plot(outerBoundary(:,1),outerBoundary(:,2),holes1(:,1),holes1(:,2),holes2(:,1),holes2(:,2),holes3(:,1),holes3(:,2));
 
 %[X, T] = cdt([{outerBoundary},{holes1,holes2,holes3}],[], 10000, false);
@@ -31,7 +31,9 @@ figure(1);
 CX=fR2C(X);
 TR=triangulation(T,X);
 triplot(TR);
-BdIdx=freeBoundary(TR);
+BD=getBoundary(TR);
+nBD=size(BD,2);
+argHole=argComp(BD,X);
 
 
 
@@ -72,7 +74,9 @@ testDeformMeshXInt=fC2R(CtestDeformMeshXInt);
 figure(2);
 TRDeformInt=triangulation(T,testDeformMeshXInt);
 triplot(TRDeformInt);
-
+hold on;
+drawBoundary(BD,testDeformMeshXInt);
+argHole0=argComp(BD,testDeformMeshXInt);
 
 
 
@@ -89,14 +93,15 @@ XP2PDeform=[XP2PDeform,X(:,2)];
 figure(3);
 triplot(T,XP2PDeform(:,1),XP2PDeform(:,2));
 hold on;
-plot(XP2PDeform(BdIdx(:,1),1),XP2PDeform(BdIdx(:,1),2),'r','Marker','o','MarkerSize',2);
-
+%plot(XP2PDeform(BdIdx(:,1),1),XP2PDeform(BdIdx(:,1),2),'r','Marker','o','MarkerSize',2);
+drawBoundary(BD,XP2PDeform);
+argHole1=argComp(BD,XP2PDeform(:,1:2));
 
 % trimesh(T,XP2PDeform(:,1),XP2PDeform(:,2),X(:,2));
 fprintf('\n\n\n\n\n\n\n\n\n\n');
 
 %% comparison
-direct_scalCX=0.25*CX;
+direct_scalCX=0.2*CX;
 [XP2PDeform2, statsAll]=meshNewton(CX,T,P2PVtxIds, direct_scalCX(P2PVtxIds),direct_scalCX, 1000,100,'SymmDirichlet');
 
 XP2PDeform2=fC2R(XP2PDeform2);
@@ -104,7 +109,8 @@ XP2PDeform2=fC2R(XP2PDeform2);
 figure(4);
 triplot(T,XP2PDeform2(:,1),XP2PDeform2(:,2));
 hold on;
-plot(XP2PDeform2(BdIdx(:,1),1),XP2PDeform2(BdIdx(:,1),2),'r','Marker','o','MarkerSize',2);
+drawBoundary(BD,XP2PDeform2);
+argHole2=argComp(BD,XP2PDeform2);
 
 
 
