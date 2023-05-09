@@ -1,4 +1,4 @@
-function [z, allStats] = meshNewton(xref, t, P2PVtxIds, P2PDst, y, nIter, p2p_weight, energy_type, energy_param, hession_proj)
+function [z,triEn, allStats] = meshNewton(xref, t, P2PVtxIds, P2PDst, y, nIter, p2p_weight, energy_type, energy_param, hession_proj)
 
 fR2C = @(x) complex(x(:,1), x(:,2));
 fC2R = @(x) [real(x) imag(x)];
@@ -6,8 +6,17 @@ if ~exist('splsolver_imp','file')
     addpath( genpath([pwd '\splsolver']) );
 end
 
-r=0.4;
-barrier_param=0.00004;
+r=0.5;
+barrier_param=0.00001;
+ub=0.45; db=-0.45;
+lb=-0.45; rb=0.45;
+
+scal=1;tmp=0.00001;
+fB=@(x,param_e) 1/(scal*x+sqrt((scal*x).^2+param_e))*tmp;
+dfB=@(x,param_e) -scal./((scal*x).*(sqrt((scal*x).^2+param_e)+(scal*x))+param_e)*tmp;
+ddfB=@(x,param_e) scal^2./sqrt(((scal*x).^2+param_e).^3)*tmp;
+eB=0.00001;
+
 %barrier_param=0;
 
 if ~exist('energy_type', 'var'), hession_proj = 'SymmDirichlet'; end
@@ -22,11 +31,11 @@ if ~isempty(P2PDst)
 end
 nf = size(t, 1);
 nv = size(y, 1);
-
-if isempty(P2PVtxIds)
-    [~,P2PVtxIds] = min(abs(y-mean(y)));
-    P2PDst = y(P2PVtxIds);
-end
+% 
+% if isempty(P2PVtxIds)
+%     [~,P2PVtxIds] = min(abs(y-mean(y)));
+%     P2PDst = y(P2PVtxIds);
+% end
 
 %%
 if size(xref,1)==nv
@@ -57,8 +66,8 @@ D = sparse(repmat(1:nf,3,1)', t, D2);
 fIsoEnergyFromFzGz = @(fz, gz) meshIsometricEnergyC(fz, gz, D2t, Areas, mexoption);
 
 %fDeformEnergy = @(z) fIsoEnergyFromFzGz(conj(D*conj(z)), D*z) + p2p_weight*norm(z(P2PVtxIds)-P2PDst)^2;
-fDeformEnergy = @(z) fIsoEnergyFromFzGz(conj(D*conj(z)), D*z) + p2p_weight*norm(z(P2PVtxIds)-P2PDst)^2+barrier_param*sum(1./((r^2-real(z).^2))+1./((r^2-imag(z).^2)));
-
+%fDeformEnergy = @(z) fIsoEnergyFromFzGz(conj(D*conj(z)), D*z) + p2p_weight*norm(z(P2PVtxIds)-P2PDst)^2+barrier_param*sum(1./((r^2-real(z).^2))+1./((r^2-imag(z).^2)));
+fDeformEnergy = @(z) fIsoEnergyFromFzGz(conj(D*conj(z)), D*z) + p2p_weight*norm(z(P2PVtxIds)-P2PDst)^2+2*sum(fB(real(z)-lb,eB)+fB(rb-real(z),eB)+fB(imag(z)-db,eB)+fB(ub-imag(z),eB));
 %% initialization, get sparse matrix pattern
 [xmesh, ymesh] = meshgrid(1:6, 1:6);
 t2 = [t t+nv]';
@@ -105,12 +114,14 @@ for it=1:nIter
     Hnonzeros = myaccumarray( nzidx, hs, Hnonzeros0 );
     
     Rz=real(z); Iz=imag(z);
-    G1=barrier_param*[2*Rz./(r^2-Rz.*Rz).^2;2*Iz./(r^2-Iz.*Iz).^2];
+%    G1=barrier_param*[2*Rz./(r^2-Rz.*Rz).^2;2*Iz./(r^2-Iz.*Iz).^2];
+    G1=2*[-dfB(r-Rz,eB)+dfB(Rz+r,eB);-dfB(r-Iz,eB)+dfB(Iz+r,eB)];
     G=G+G1;
-    Hnonzeros2(idxDiagH2)=barrier_param*[2*(r^2+3*Rz.*Rz)./(r^2-Rz.*Rz).^3;2*(r^2+3*Iz.*Iz)./(r^2-Iz.*Iz).^3];
+%    Hnonzeros2(idxDiagH2)=barrier_param*[2*(r^2+3*Rz.*Rz)./(r^2-Rz.*Rz).^3;2*(r^2+3*Iz.*Iz)./(r^2-Iz.*Iz).^3];
+    Hnonzeros2(idxDiagH2)=2*[ddfB(r-Rz,eB)+ddfB(Rz+r,eB);ddfB(r-Rz,eB)+ddfB(Rz+r,eB)];
     Hnonzeros=Hnonzeros+Hnonzeros2;
-    en=en+barrier_param*sum(1./((r^2-real(z).^2))+1./((r^2-imag(z).^2)));
-    
+%    en=en+barrier_param*sum(1./((r^2-real(z).^2))+1./((r^2-imag(z).^2)));
+    en=en+2*sum(fB(real(z)-lb,eB)+fB(rb-real(z),eB)+fB(imag(z)-db,eB)+fB(ub-imag(z),eB));
     %% Newton
     dz = solver.refactor_solve(Hnonzeros, -G);
     dz = fR2C( reshape(dz, [], 2) );
@@ -134,7 +145,7 @@ for it=1:nIter
     end
     en = e_new;
     
-    fprintf('\nit: %3d, en: %.3e, runtime: %.3fs, ls: %.2e', it, enIso, toc(tt), ls_t*normdz);
+    fprintf('\nit: %3d, en: %.3e, runtime: %.3fs, ls: %.2e', it, en, toc(tt), ls_t*normdz);
     assert( all( signedAreas(dz*ls_t + z, t)>0 ) );
     
     %% update
@@ -147,6 +158,10 @@ for it=1:nIter
     if norm(G)<1e-4, break; end
     if norm(dz)*ls_t<1e-10, break; end
 end
+
+fz = conj(D*conj(z)); % equivalent but faster than conj(D)*z;
+gz = D*z;
+triEn = energyForEverySingleTriangle(fz,gz,Areas);
 
 allStats = allStats(1:it+1, :);
 allStats(:,7:8) = allStats(:,7:8)/sum(Areas);
