@@ -7,11 +7,11 @@ if ~exist('splsolver_imp','file')
 end
 
 r=0.5;
-barrier_param=0.00001;
+barrier_param=0.0000001;
 ub=0.45; db=-0.45;
 lb=-0.45; rb=0.45;
 
-scal=1;tmp=0.00001;
+scal=1;tmp=0.000001;
 fB=@(x,param_e) 1/(scal*x+sqrt((scal*x).^2+param_e))*tmp;
 dfB=@(x,param_e) -scal./((scal*x).*(sqrt((scal*x).^2+param_e)+(scal*x))+param_e)*tmp;
 ddfB=@(x,param_e) scal^2./sqrt(((scal*x).^2+param_e).^3)*tmp;

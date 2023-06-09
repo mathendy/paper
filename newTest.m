@@ -5,6 +5,24 @@ fR2C = @(x) complex(x(:,1), x(:,2));
 datadir = fullfile(cd, 'data', working_dataset, '\');
 imgfilepath  = fullfile(datadir, 'image.png');
 
+%% test for a real floor plan
+outerBoundary=[515,152;1209,152;1209,442;1143,442;1175,567;1175,873;1195,873;1195,1333;824,1333;824,1581;739,1581;739,1767;708,1767;708,1870;546,1870;546,1811;476,1811;476,1255;420,1255;...
+    420,1061;351,1061;351,581;313,581;313,333;515,333;515,152]*2/1870-[1,1];
+holes1=[916,442;1049,442;1049,583;1083,583;1083,683;916,683;916,442]*2/1870-[1,1];
+holes2=[512,778;640,778;640,949;512,949;512,778]*2/1870-[1,1];
+holes3=[998,1109;1093,1109;1093,1176;998,1176;998,1109]*2/1870-[1,1];
+holes5=[-0.35,0.9;-0.25,0.9;-0.25,0.7;-0.35,0.7;-0.35,0.9];
+plot(outerBoundary(:,1),outerBoundary(:,2),holes1(:,1),holes1(:,2),holes2(:,1),holes2(:,2),holes3(:,1),holes3(:,2),holes5(:,1),holes5(:,2));
+%plot(outerBoundary(:,1),outerBoundary(:,2),holes1(:,1),holes1(:,2),holes2(:,1),holes2(:,2),holes3(:,1),holes3(:,2));
+holeCenter1=(982+562i)*2/1870-(1+1i);
+holeCenter2=(576+863i)*2/1870-(1+1i);
+holeCenter3=(1045+1172i)*2/1870-(1+1i);
+holeCenter4=-0.05+0.7i;
+holeCenter5=-0.3+0.8i;
+
+axis equal
+%[X, T] = cdt([{outerBoundary},{holes1,holes2,holes3,holes4}],[], 50000, false);
+[X, T] = cdt([{outerBoundary},{holes1,holes2,holes3,holes5}],[], 50000, false);
 
 %% test for 3 holes ring mesh
 arg1=(0:2:360)'/180*pi;
@@ -76,9 +94,10 @@ BD=getBoundary(TR);
 nBD=size(BD,2);
 hold on;
 drawBoundary(BD,X);
-s=3-3.25;ed=3-3.35;
-plot([s;s;ed;ed;s],[-1;1;1;-1;-1],'r');
-axis off;
+% s=3-3.25;ed=3-3.35;
+% plot([s;s;ed;ed;s],[-1;1;1;-1;-1],'r');
+axis equal;
+axis on;
 
 argHole=argComp(BD,X);
 
@@ -87,9 +106,9 @@ argHole=argComp(BD,X);
 
 %% integration
 %2 holes
-a1=-(holeCenter1+holeCenter2)/2;
-a2=holeCenter1*holeCenter2;
-fDeformInt=@(x) 1/3*x.^3+a1*x.^2+a2*x;
+% a1=-(holeCenter1+holeCenter2)/2;
+% a2=holeCenter1*holeCenter2;
+% fDeformInt=@(x) 1/3*x.^3+a1*x.^2+a2*x;
 
 %3 holes
 % a1=-(holeCenter1+holeCenter2+holeCenter3)/3;
@@ -105,15 +124,15 @@ fDeformInt=@(x) 1/3*x.^3+a1*x.^2+a2*x;
 % fDeformInt=@(x) 1/5*x.^5+a1*x.^4+a2*x.^3+a3*x.^2+a4*x;
 
 %5 holes
-% a1=-(holeCenter1+holeCenter2+holeCenter3+holeCenter4+holeCenter5)/5;
-% a2=(holeCenter1*holeCenter2+holeCenter1*holeCenter3+holeCenter2*holeCenter3+holeCenter1*holeCenter4+holeCenter4*holeCenter3+holeCenter2*holeCenter4...
-%     +(holeCenter1+holeCenter2+holeCenter3+holeCenter4)*holeCenter5)/4;
-% a3=-(holeCenter1*holeCenter2*holeCenter3+holeCenter1*holeCenter2*holeCenter4+holeCenter1*holeCenter4*holeCenter3+holeCenter4*holeCenter2*holeCenter3...
-%     +(holeCenter1*holeCenter2+holeCenter1*holeCenter3+holeCenter2*holeCenter3+holeCenter1*holeCenter4+holeCenter4*holeCenter3+holeCenter2*holeCenter4)*holeCenter5)/3;
-% a4=(holeCenter1*holeCenter2*holeCenter3*holeCenter4+(holeCenter1*holeCenter2*holeCenter3+holeCenter1*holeCenter2*holeCenter4+holeCenter1*holeCenter4*holeCenter3...
-%     +holeCenter4*holeCenter2*holeCenter3)*holeCenter5)/2;
-% a5=holeCenter1*holeCenter2*holeCenter3*holeCenter4*holeCenter5;
-% fDeformInt=@(x) 1/6*x.^6+a1*x.^5+a2*x.^4+a3*x.^3+a4*x.^2+a5*x;
+a1=-(holeCenter1+holeCenter2+holeCenter3+holeCenter4+holeCenter5)/5;
+a2=(holeCenter1*holeCenter2+holeCenter1*holeCenter3+holeCenter2*holeCenter3+holeCenter1*holeCenter4+holeCenter4*holeCenter3+holeCenter2*holeCenter4...
+    +(holeCenter1+holeCenter2+holeCenter3+holeCenter4)*holeCenter5)/4;
+a3=-(holeCenter1*holeCenter2*holeCenter3+holeCenter1*holeCenter2*holeCenter4+holeCenter1*holeCenter4*holeCenter3+holeCenter4*holeCenter2*holeCenter3...
+    +(holeCenter1*holeCenter2+holeCenter1*holeCenter3+holeCenter2*holeCenter3+holeCenter1*holeCenter4+holeCenter4*holeCenter3+holeCenter2*holeCenter4)*holeCenter5)/3;
+a4=(holeCenter1*holeCenter2*holeCenter3*holeCenter4+(holeCenter1*holeCenter2*holeCenter3+holeCenter1*holeCenter2*holeCenter4+holeCenter1*holeCenter4*holeCenter3...
+    +holeCenter4*holeCenter2*holeCenter3)*holeCenter5)/2;
+a5=-holeCenter1*holeCenter2*holeCenter3*holeCenter4*holeCenter5;
+fDeformInt=@(x) 1/6*x.^6+a1*x.^5+a2*x.^4+a3*x.^3+a4*x.^2+a5*x;
 
 
 CtestDeformMeshXInt=fDeformInt(CX);
@@ -147,7 +166,7 @@ argHole0=argComp(BD,testDeformMeshXInt);
 
 %% optimal
 P2PVtxIds=[];
-CtestDeformMeshXInt=0.6*CtestDeformMeshXInt;
+%CtestDeformMeshXInt=0.25*CtestDeformMeshXInt;
 %[XP2PDeform, statsAll] = meshAQP(CX, T, P2PVtxIds, CtestDeformMeshXInt(P2PVtxIds), CtestDeformMeshXInt, 1000);
 [XP2PDeform,triEn1, statsAll]=meshNewton(CX,T,P2PVtxIds, CtestDeformMeshXInt(P2PVtxIds),CtestDeformMeshXInt, 1000,100,'SymmDirichlet');
 %[XP2PDeform, statsAll] = meshAQP(CX, T, P2PVtxIds, XP2PDeform(P2PVtxIds), XP2PDeform, 1000);
@@ -184,7 +203,7 @@ argHole2=argComp(BD,XP2PDeform2);
 %% draw energy map
 figure(3);
 trisurf(T,XP2PDeform(:,1),XP2PDeform(:,2),X(:,1),triEn1,'EdgeColor','none');
-caxis([0 max(triEn1)]);
+caxis([0 max(triEn2)]);
 colormap('turbo');
 colorbar;
 hold on;
@@ -192,7 +211,7 @@ drawBoundary(BD,[XP2PDeform,X(:,1)]);
 
 figure(4);
 trisurf(T,XP2PDeform2(:,1),XP2PDeform2(:,2),zeros(size(XP2PDeform2,1),1),triEn2,'EdgeColor','none');
-caxis([0 max(triEn1)]);
+caxis([0 max(triEn2)]);
 colormap('turbo');
 colorbar;
 hold on;
